@@ -18,8 +18,8 @@ data(burn)
 burn_1m <-  burn %>%
   mutate(ID          = Obs,
          Treatment   = if_else(Z1 == 1, "Body Cleansing", "Routine Bath"),
-         Gender      = if_else(Z2 == 1, "Female", "Male"),
-         Race        = if_else(Z3 == 1, "White", "Non-white"),
+         Sex         = if_else(Z2 == 1, "Female", "Male"),
+         Race        = if_else(Z3 == 1, "White", "Other"),
          Type        = case_when(Z11 == 1 ~ "Chemical",
                                  Z11 == 2 ~ "Scald",
                                  Z11 == 3 ~ "Electric",

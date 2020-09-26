@@ -39,7 +39,7 @@ ui    <- fluidPage(
     column(5,
            h3("Drill Down Table"),
            br(),
-           reactableOutput('drill_tab', width="1000")
+           reactableOutput('drill_tab', width="775")
            
     )
   )
@@ -153,9 +153,15 @@ server <- function(input, output) {
     
     
     
-    reactable(drill_data() %>% select(ID, Gender, Race, Type, Swimmer), 
+    reactable(drill_data() %>% select(ID, Sex, Race, Type, Swimmer), 
+              defaultPageSize = 7,
               columns = list(
-                Swimmer = colDef(cell = function(value,index) {
+                ID     = colDef(width=50),
+                Sex    = colDef(width=65),
+                Race   = colDef(width=65), 
+                Type   = colDef(width=75),
+                
+                Swimmer = colDef(name = 'Swimmer Plot',cell = function(value,index) {
                   drill_data()[index,] %>%
                     hchart("bar",  hcaes(x = ID , y = Time), name = "Follow-up Time") %>%
                     
