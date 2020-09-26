@@ -20,7 +20,7 @@ burn_1m <-  burn %>%
          Treatment   = if_else(Z1 == 1, "Body Cleansing", "Routine Bath"),
          Sex         = if_else(Z2 == 1, "Female", "Male"),
          Race        = if_else(Z3 == 1, "White", "Other"),
-         Type        = case_when(Z11 == 1 ~ "Chemical",
+         Type        = case_when(Z11 == 1 ~ "Chem",
                                  Z11 == 2 ~ "Scald",
                                  Z11 == 3 ~ "Electric",
                                  Z11 == 4 ~ "Flame"),

@@ -5,6 +5,7 @@
 #load libs
 library(tidyverse)
 library(shiny)
+library(survival)
 library(survminer)
 library(shinythemes)
 library(reactable)
@@ -26,7 +27,15 @@ ui    <- fluidPage(
   fluidRow(
     column(2,
            wellPanel(
-             selectInput('option','Select Analysis:', choices=c('Kaplan Meier'=1,'Cumulative Events'=2))
+             p("A survival analysis of time to staphylococcus infection (days) by treatment group (routine bathing vs body cleansing) among burn patients is used to demonstrate interactive survival tables."),
+             br(),
+             selectInput('option','Select Analysis Method:', choices=c('Kaplan Meier'=1,'Cumulative Events'=2)),
+             br(),
+             p("If Kaplan Meier is chosen as the method, the Number at Risk table is displayed. If Cumulative Events is chosen, the Number of Events table is displayed."),
+             br(),
+             p("The summary table below the plot is interactable; click on a cell to view the patients who comprise it in the adjacent table."),
+             br(),
+             p("The adjacent table contains a swimmer plot for each participant, which has these features:")
            )       
     ),
     column(5,
@@ -52,7 +61,8 @@ server <- function(input, output) {
   #Define Reactive Values
   values <- reactiveValues()
   
-  #Store table data source, table title, plot title and plot options, based on user analysis selected 
+  #Store: table data source, table title, plot title and plot options 
+  #These are all elements that display/change on the UI based on user selection 
   observeEvent(input$option,{
     if (input$option == 1) {
       values$data        <- nar_summary_table
@@ -72,7 +82,7 @@ server <- function(input, output) {
   output$plot_title <- renderText(values$plot_title)
   
   #Plot
-  output$km <- renderPlot(ggsurvplot(sfit, conf.int = TRUE, palette=c("#82b1ff","#7c4dff"), fun = values$plot_type)) 
+  output$km <- renderPlot(ggsurvplot(sfit, conf.int = TRUE, palette=c("#5F4B8BFF" ,  "#E69A8DFF"), fun = values$plot_type)) 
   
   #Summary Table Title
   output$header <- renderText(values$table_title)
@@ -92,11 +102,12 @@ server <- function(input, output) {
       formatStyle(
         'Treatment',
         target = 'row',
-        color = styleEqual(c("Body Cleansing", "Routine Bath"), c("#82b1ff","#7c4dff")))
+        color = styleEqual(c("Body Cleansing", "Routine Bath"), c("#5F4B8BFF" ,  "#E69A8DFF")))
   )
   
   
-  #Subset the original patient level data (e.g. burn_1m) to create the drill down data (e.g. drill_data()), based on user selection in output$summary_tab
+  #Subset the original patient level data (e.g. burn_1m) to create the drill down data (e.g. drill_data()), 
+  #based on user cell selection in output$summary_tab
   drill_data <- reactive({
     
     #Require selection by user before doing anything
@@ -106,14 +117,14 @@ server <- function(input, output) {
     row_coord <- as.integer(input$summary_tab_cells_selected[1])
     col_coord <- as.integer(input$summary_tab_cells_selected[2])
     
-    #Note: it's helpful to print these to the console to get an idea of the coordinates
+    #Note: it's helpful to print these to the console to get an idea of the coordinates / debugging
     #print(row_coord)
     #print(col_coord)
     
     
     #Remove variables not used, based on what was selected.
     #Keeping them in interfere with the position coordinates in the next chunk.
-    #e.g. removing the unused ones lets us use the same selection logic on line 120
+    #e.g. removing the unused ones lets us use the same selection logic on line 133 :)
     if(input$option==1) {
       drill_filtered <- burn_1m %>%
         select(-starts_with("event_"))
@@ -126,8 +137,8 @@ server <- function(input, output) {
     #Using the coordinates, subset the original patient level data
     drill_filtered <- drill_filtered %>%
       
-      #Here we specify what variables we want to see in the drill down - I only want a few clinical ones
-      #The last variable is always the indicator variable, and is based on the col_coord
+      #Here we specify what variables we want to see in the drill down
+      #The last variable is always the indicator variable (e.g. event or risk), and is based on the col_coord of the user selected cell
       select(c(1:13, col_coord+13)) %>%
       
       #Filter the last variable (i.e. the indicator) to be equal to 1
@@ -150,58 +161,44 @@ server <- function(input, output) {
   
   #Show the drilled down data
   output$drill_tab <- renderReactable(
-    
-    
-    
-    reactable(drill_data() %>% select(ID, Sex, Race, Type, Swimmer), 
+
+    reactable(#Select only a few variables for display in the drill down
+              drill_data() %>% select(ID, Sex, Race, Type, Swimmer), 
               defaultPageSize = 7,
+              
+              #Adjusting column widths
               columns = list(
                 ID     = colDef(width=50),
                 Sex    = colDef(width=65),
                 Race   = colDef(width=65), 
                 Type   = colDef(width=75),
                 
-                Swimmer = colDef(name = 'Swimmer Plot',cell = function(value,index) {
-                  drill_data()[index,] %>%
-                    hchart("bar",  hcaes(x = ID , y = Time), name = "Follow-up Time") %>%
-                    
-                    #Event censoring
-                    hc_add_series(drill_data()[index,], "point",  marker = list(symbol = "triangle"), hcaes(x=ID, y=Time,   color = Censor_col, group = Name_col)) %>%
-                    hc_add_series(drill_data()[index,], name = "Excision",      "point",  marker = list(symbol = "circle"),   hcaes(x=ID, y=Excise_Time),   color = "green") %>%
-                    hc_add_series(drill_data()[index,], name = "Prophylaxis", "point",  marker = list(symbol = "square"),     hcaes(x=ID, y=Prophylaxis_Time), color = "purple") %>%
-                    
-                    #Axis
-                    hc_yAxis(title = list(text = " "), min=0, max=100,  labels = list(enabled=TRUE)) %>%
-                    hc_xAxis(title = list(text = " "), labels = list(enabled=FALSE)) %>%
-                    
-                    #Misc plot options
-                    hc_legend(enabled=FALSE) %>%
-                    hc_size(width = 500, height = 60) %>%
-                    hc_tooltip(formatter = JS("function(){
-                            return (this.series.name + `:  ` + this.y + ` days`)
-                            }")
-                    )
-                  
-                  
-                  
-                  
-                  
-                }
-                )
-              )
-    ) 
-                        
-    
-    
-    
-    
-                            
-                                                
-  )
-  
-  
-  
-}
+              #Swimmer Plot - this will access drill_data() and create the plot in Highcharter
+                Swimmer = colDef(name = 'Swimmer Plot',
+                                 cell = function(value,index) {
+                                          drill_data()[index,] %>%
+                                            hchart("bar",  hcaes(x = ID , y = Time), name = "Follow-up Time") %>%
+                                            
+                                            #Event censoring
+                                            hc_add_series(drill_data()[index,], "point",  marker = list(symbol = "triangle"), hcaes(x=ID, y=Time,   color = Censor_col, group = Name_col)) %>%
+                                            hc_add_series(drill_data()[index,], name = "Excision",    "point",  marker = list(symbol = "circle"),   hcaes(x=ID, y=Excise_Time),   color = "green") %>%
+                                            hc_add_series(drill_data()[index,], name = "Prophylaxis", "point",  marker = list(symbol = "square"),     hcaes(x=ID, y=Prophylaxis_Time), color = "purple") %>%
+                                            
+                                            #Axis
+                                            hc_yAxis(title = list(text = " "), min=0, max=100,  labels = list(enabled=TRUE)) %>%
+                                            hc_xAxis(title = list(text = " "), labels = list(enabled=FALSE)) %>%
+                                            
+                                            #Misc plot options
+                                            hc_legend(enabled=FALSE) %>%
+                                            hc_size(width = 500, height = 80) %>%
+                                            hc_tooltip(formatter = JS("function(){return (this.series.name + `:  ` + this.y + ` days`)}"))
+                                        
+                                      } #end cell function
+                                 ) #end Swimmer
+                        ) #end columns list
+                ) #end reactable
+        ) #end renderReactable
+} #end server
 
 #Run the app
 shinyApp(ui = ui, server = server)
