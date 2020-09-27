@@ -17,41 +17,38 @@ library(highcharter)
 load(here::here('data', 'pre_computed_data.Rdata'))
 
 #define ui
-ui    <- fluidPage( 
-  theme = shinytheme("cosmo"),
-  
-  titlePanel("Survival Tables"),
-  
-  fluidRow(
-    column(2,
-           wellPanel(
-             p("A survival analysis of time to staphylococcus infection (days) by treatment group (routine bathing vs body cleansing) among burn patients is used to demonstrate interactive survival tables."),
-             br(),
-             selectInput('option','Select Analysis Method:', choices=c('Kaplan Meier'=1,'Cumulative Events'=2)),
-             br(),
-             p("If Kaplan Meier is chosen as the method, the Number at Risk table is displayed. If Cumulative Events is chosen, the Number of Events table is displayed."),
-             br(),
-             p("The summary table below the main plot is interactable; click on a cell to view the patients who comprise it in the adjacent table."),
-             br(),
-             p("The adjacent table also contains an interactive, inline", strong("swimmer plot")," for each participant. Hover over the points on the plot to learn about the different event types!"),
-             br()
-           )       
-    ),
-    column(5,
-           h3(textOutput("plot_title")),
-           br(),
-           plotOutput('km', height="470", width="675"),
-           h5(textOutput("header")),
-           DT::dataTableOutput('summary_tab', width="700")
-    ),
-    column(5,
-           h3("Drill Down Table"),
-           br(),
-           reactableOutput('drill_tab', width="775")
-           
-    )
-  )
-)
+ui  <- fluidPage( 
+        theme = shinytheme("cosmo"),
+        titlePanel("Survival Tables"),
+        fluidRow(
+          column(2,
+                 wellPanel(
+                   p("A survival analysis of time to staphylococcus infection (days) by treatment group (routine bathing vs body cleansing) among burn patients is used to demonstrate interactive survival tables."),
+                   br(),
+                   selectInput('option','Select Analysis Method:', choices=c('Kaplan Meier'=1,'Cumulative Events'=2)),
+                   br(),
+                   p("If Kaplan Meier is chosen as the method, the Number at Risk table is displayed. If Cumulative Events is chosen, the Number of Events table is displayed."),
+                   br(),
+                   p("The summary table below the main plot is interactable; click on a cell to view the patients who comprise it in the adjacent table."),
+                   br(),
+                   p("The adjacent table also contains an interactive, inline", strong("swimmer plot")," for each participant. Hover over the points on the plot to learn about the different event types!"),
+                   br()
+                 )       
+          ),
+          column(5,
+                 h3(textOutput("plot_title")),
+                 br(),
+                 plotOutput('km', height="470", width="675"),
+                 h5(textOutput("header")),
+                 DT::dataTableOutput('summary_tab', width="700")
+          ),
+          column(5,
+                 h3("Drill Down Table"),
+                 br(),
+                 reactableOutput('drill_tab', width="775")
+          )
+        )
+     ) #end fluidPage
 
 
 #define server
