@@ -16,11 +16,9 @@ library(highcharter)
 #the script that produced this data is in /code/01_data_prep.R
 load(here::here('data', 'pre_computed_data.Rdata'))
 
-
-
 #define ui
 ui    <- fluidPage( 
-  theme = shinytheme("flatly"),
+  theme = shinytheme("cosmo"),
   
   titlePanel("Survival Tables"),
   
@@ -35,15 +33,16 @@ ui    <- fluidPage(
              br(),
              p("The summary table below the main plot is interactable; click on a cell to view the patients who comprise it in the adjacent table."),
              br(),
-             p("The adjacent table contains an interactive inline", strong("swimmer plot")," for each participant. Hover over the points on the plot to learn about the different event types!"),
+             p("The adjacent table also contains an interactive, inline", strong("swimmer plot")," for each participant. Hover over the points on the plot to learn about the different event types!"),
              br()
            )       
     ),
     column(5,
+           
            h3(textOutput("plot_title")),
            br(),
            plotOutput('km', height="470", width="675"),
-           h6(textOutput("header")),
+           h5(textOutput("header")),
            DT::dataTableOutput('summary_tab', width="700")
     ),
     column(5,
@@ -162,11 +161,14 @@ server <- function(input, output) {
   
   #Show the drilled down data
   output$drill_tab <- renderReactable(
-
+  
+    
     reactable(#Select only a few variables for display in the drill down
               drill_data() %>% select(ID, Sex, Race, Type, Swimmer), 
               defaultPageSize = 6,
-              
+              striped = TRUE,
+              highlight = TRUE,
+              searchable = TRUE,
               #Adjusting column widths
               columns = list(
                 ID     = colDef(width=50),
@@ -191,7 +193,7 @@ server <- function(input, output) {
                                             
                                             #Misc plot options
                                             hc_legend(enabled=FALSE) %>%
-                                            hc_size(width = 500, height = 80) %>%
+                                            hc_size(width = 500, height = 70) %>%
                                             hc_tooltip(formatter = JS("function(){return (this.series.name + `:  ` + this.y + ` days`)}"))
                                         
                                       } #end cell function
