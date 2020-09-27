@@ -38,7 +38,6 @@ ui    <- fluidPage(
            )       
     ),
     column(5,
-           
            h3(textOutput("plot_title")),
            br(),
            plotOutput('km', height="470", width="675"),
@@ -77,7 +76,6 @@ server <- function(input, output) {
     }
   })
   
-  
   #Plot Title
   output$plot_title <- renderText(values$plot_title)
   
@@ -105,7 +103,6 @@ server <- function(input, output) {
         color = styleEqual(c("Body Cleansing", "Routine Bath"), c("#5F4B8BFF" ,  "#E69A8DFF")))
   )
   
-  
   #Subset the original patient level data (e.g. burn_1m) to create the drill down data (e.g. drill_data()), 
   #based on user cell selection in output$summary_tab
   drill_data <- reactive({
@@ -121,10 +118,9 @@ server <- function(input, output) {
     #print(row_coord)
     #print(col_coord)
     
-    
     #Remove variables not used, based on what was selected.
     #Keeping them in interfere with the position coordinates in the next chunk.
-    #e.g. removing the unused ones lets us use the same selection logic on line 142
+    #e.g. removing the unused ones lets us use the same selection logic on line 137
     if(input$option==1) {
       drill_filtered <- burn_1m %>%
         select(-starts_with("event_"))
@@ -132,7 +128,6 @@ server <- function(input, output) {
       drill_filtered <- burn_1m %>%
         select(-starts_with("risk_"))
     }
-    
     
     #Using the coordinates, subset the original patient level data
     drill_filtered <- drill_filtered %>%
@@ -143,7 +138,6 @@ server <- function(input, output) {
       
       #Filter the last variable (i.e. the indicator) to be equal to 1
       filter(eval(parse(text=colnames(.)[ncol(.)])) == 1) 
-    
     
     #Final filtering on rows
     if(row_coord == 1) {
@@ -158,12 +152,10 @@ server <- function(input, output) {
     }
   })
   
-  
   #Show the drilled down data
   output$drill_tab <- renderReactable(
-    
-    
-    reactable(#Select only a few variables for display in the drill down
+    reactable(
+      #Select only a few variables for display in the drill down
       drill_data() %>% select(ID, Sex, Race, Type, Swimmer), 
       defaultPageSize = 6,
       striped = TRUE,
