@@ -124,7 +124,7 @@ server <- function(input, output) {
     
     #Remove variables not used, based on what was selected.
     #Keeping them in interfere with the position coordinates in the next chunk.
-    #e.g. removing the unused ones lets us use the same selection logic on line 133 :)
+    #e.g. removing the unused ones lets us use the same selection logic on line 142
     if(input$option==1) {
       drill_filtered <- burn_1m %>%
         select(-starts_with("event_"))
@@ -161,46 +161,47 @@ server <- function(input, output) {
   
   #Show the drilled down data
   output$drill_tab <- renderReactable(
-  
+    
     
     reactable(#Select only a few variables for display in the drill down
-              drill_data() %>% select(ID, Sex, Race, Type, Swimmer), 
-              defaultPageSize = 6,
-              striped = TRUE,
-              highlight = TRUE,
-              searchable = TRUE,
-              #Adjusting column widths
-              columns = list(
-                ID     = colDef(width=50),
-                Sex    = colDef(width=65),
-                Race   = colDef(width=65), 
-                Type   = colDef(width=75),
-                
-              #Swimmer Plot - this will access drill_data() and create the plot in Highcharter
-                Swimmer = colDef(name = 'Swimmer Plot',
-                                 cell = function(value,index) {
-                                          drill_data()[index,] %>%
-                                            hchart("bar",  hcaes(x = ID , y = Time), name = "Follow-up Time") %>%
-                                            
-                                            #Event censoring
-                                            hc_add_series(drill_data()[index,], "point",  marker = list(symbol = "triangle"), hcaes(x=ID, y=Time,   color = Censor_col, group = Name_col)) %>%
-                                            hc_add_series(drill_data()[index,], name = "Excision",    "point",  marker = list(symbol = "circle"),   hcaes(x=ID, y=Excise_Time),   color = "green") %>%
-                                            hc_add_series(drill_data()[index,], name = "Prophylaxis", "point",  marker = list(symbol = "square"),     hcaes(x=ID, y=Prophylaxis_Time), color = "purple") %>%
-                                            
-                                            #Axis
-                                            hc_yAxis(title = list(text = " "), min=0, max=100,  labels = list(enabled=TRUE)) %>%
-                                            hc_xAxis(title = list(text = " "), labels = list(enabled=FALSE)) %>%
-                                            
-                                            #Misc plot options
-                                            hc_legend(enabled=FALSE) %>%
-                                            hc_size(width = 500, height = 70) %>%
-                                            hc_tooltip(formatter = JS("function(){return (this.series.name + `:  ` + this.y + ` days`)}"))
-                                        
-                                      } #end cell function
-                                 ) #end Swimmer
-                        ) #end columns list
-                ) #end reactable
-        ) #end renderReactable
+      drill_data() %>% select(ID, Sex, Race, Type, Swimmer), 
+      defaultPageSize = 6,
+      striped = TRUE,
+      highlight = TRUE,
+      searchable = TRUE,
+      
+      #Adjusting column widths
+      columns = list(
+        ID     = colDef(width=50),
+        Sex    = colDef(width=65),
+        Race   = colDef(width=65), 
+        Type   = colDef(width=75),
+        
+        #Swimmer Plot - this will access drill_data() and create the plot in Highcharter
+        Swimmer = colDef(name = 'Swimmer Plot',
+                         cell = function(value,index) {
+                           drill_data()[index,] %>%
+                             hchart("bar",  hcaes(x = ID , y = Time), name = "Follow-up Time") %>%
+                             
+                             #Event censoring
+                             hc_add_series(drill_data()[index,], "point",  marker = list(symbol = "triangle"), hcaes(x=ID, y=Time,   color = Censor_col, group = Name_col)) %>%
+                             hc_add_series(drill_data()[index,], name = "Excision",    "point",  marker = list(symbol = "circle"),   hcaes(x=ID, y=Excise_Time),   color = "green") %>%
+                             hc_add_series(drill_data()[index,], name = "Prophylaxis", "point",  marker = list(symbol = "square"),     hcaes(x=ID, y=Prophylaxis_Time), color = "purple") %>%
+                             
+                             #Axis
+                             hc_yAxis(title = list(text = " "), min=0, max=100,  labels = list(enabled=TRUE)) %>%
+                             hc_xAxis(title = list(text = " "), labels = list(enabled=FALSE)) %>%
+                             
+                             #Misc plot options
+                             hc_legend(enabled=FALSE) %>%
+                             hc_size(width = 500, height = 70) %>%
+                             hc_tooltip(formatter = JS("function(){return (this.series.name + `:  ` + this.y + ` days`)}"))
+                           
+                         } #end cell function
+        ) #end Swimmer
+      ) #end columns list
+    ) #end reactable
+  ) #end renderReactable
 } #end server
 
 #Run the app
