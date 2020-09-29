@@ -14,7 +14,7 @@ library(gplots)
 #Load the burn data set
 data(burn)
 
-#Data mgmt - general - based on documentation
+#Data mgmt - general - based on documentation - ??burn
 burn_1m <-  burn %>%
   mutate(ID          = Obs,
          Treatment   = if_else(Z1 == 1, "Body Cleansing", "Routine Bath"),
@@ -36,7 +36,7 @@ burn_1m <-  burn %>%
 
 #Data mgmt w.r.t to swimmer plot
 #Provision a place holder for the swimmer plot
-#For the secondary events (excision, prophylaxis), set the time equal to NA if the event never happened  
+#For the secondary events (excision, prophylaxis), set the time equal to NA if the event never happened - just care whether they happened or not
 #For the primary events (infection, e.g. Time/Censor), create a color and name col for the swimmer plot
 burn_1m <- burn_1m %>%
   mutate(Excise_Time      = ifelse(Excise == 1, Excise_Time, NA),
@@ -50,7 +50,7 @@ burn_1m <- burn_1m %>%
 
 #For the main survival analysis, (time to infection, e.g. Time/Censor), perform survival calculations
 sfit <- survfit(Surv(Time, Censor) ~ Treatment, data = burn_1m)
-time_vector <- seq(0,100,25)
+time_vector <- seq(0,100,20)
 
 #For each ID, construct a series of indicators that record whether they are:
 # at risk of the event for a given time
