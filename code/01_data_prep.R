@@ -42,7 +42,7 @@ burn_1m <- burn_1m %>%
   mutate(Excise_Time      = ifelse(Excise == 1, Excise_Time, NA),
          Prophylaxis_Time = ifelse(Prophylaxis == 1, Prophylaxis_Time, NA),
          Censor_col = ifelse(Censor == 1, col2hex("red"), col2hex("orange")),
-         Name_col   = ifelse(Censor == 1, "Event", "No Event"),
+         Name_col   = ifelse(Censor == 1, "Infection on Day", "No Infection on Day"),
          Swimmer = NA
   ) %>%
   select(-c(Excise, Prophylaxis, T1, T2, D1, D2))

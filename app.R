@@ -176,7 +176,7 @@ server <- function(input, output) {
         Swimmer = colDef(name = 'Swimmer Plot',
                          cell = function(value,index) {
                            drill_data()[index,] %>%
-                             hchart("bar",  hcaes(x = ID , y = Time), name = "Total Study Days:") %>%
+                             hchart("bar",  hcaes(x = ID , y = Time), name = "Total Study Days") %>%
                              
                              #Primary Event Censoring
                              hc_add_series(drill_data()[index,], "point",  marker = list(symbol = "triangle"), hcaes(x=ID, y=Time, color = Censor_col, group = Name_col)) %>%
