@@ -176,7 +176,7 @@ server <- function(input, output) {
         Swimmer = colDef(name = 'Swimmer Plot',
                          cell = function(value,index) {
                            drill_data()[index,] %>%
-                             hchart("bar",  hcaes(x = ID , y = Time), name = "Follow-up Time") %>%
+                             hchart("bar",  hcaes(x = ID , y = Time), name = "Total Study Days:") %>%
                              
                              #Primary Event Censoring
                              hc_add_series(drill_data()[index,], "point",  marker = list(symbol = "triangle"), hcaes(x=ID, y=Time, color = Censor_col, group = Name_col)) %>%
@@ -194,7 +194,7 @@ server <- function(input, output) {
                              hc_legend(enabled=FALSE) %>%
                              hc_size(width = 500, height = 70) %>%
                              #Custom tool tip formatting - basic JS
-                             hc_tooltip(formatter = JS("function(){return (this.series.name + `:  ` + this.y + ` days`)}"))
+                             hc_tooltip(formatter = JS("function(){return (this.series.name + `:  ` + this.y)}"))
                              
                            
                          } #end cell function
