@@ -120,7 +120,7 @@ server <- function(input, output) {
     
     #Remove variables not used, based on what was selected. By default, all event_ and risk_ are in the burn_1m dataset
     #Keeping the ones we don't use in interfere with the position coordinates in the next chunk
-    #e.g. removing the unused ones lets us use the same selection logic on line 137
+    #e.g. removing the unused ones lets us use the same selection logic on line 137, regardless of risk or event selection
     if(input$option==1) {
       drill_filtered <- burn_1m %>%
         select(-starts_with("event_"))
@@ -178,7 +178,10 @@ server <- function(input, output) {
                            
                            #Swimmer plot logic starts here
                            drill_data()[index,] %>%
-                             hchart("bar",  hcaes(x = ID , y = Time), name = "Total Study Days") %>%
+                             hchart("bar",  
+                                    hcaes(x = ID , y = Time), 
+                                    #name is the argument which determines what appears in the tool tip for this series
+                                    name = "Total Study Days") %>%
                              
                              #Primary Event Censoring
                              hc_add_series(drill_data()[index,], 
@@ -189,7 +192,7 @@ server <- function(input, output) {
                              #Secondary Event - Excision and its options
                              hc_add_series(drill_data()[index,], 
                                            "point",
-                                           #name is the value of the tool tip for this series
+                                           #name is the argument which determines what appears in the tool tip for this series
                                            name = "Excision on Day",  
                                            marker = list(symbol = "circle"),
                                            hcaes(x=ID, y=Excise_Time),   
@@ -198,7 +201,7 @@ server <- function(input, output) {
                              #Secondary Event - Prophlaxis and its options
                              hc_add_series(drill_data()[index,], 
                                            "point",
-                                           #name will value of the tool tip for this series
+                                           #name is the argument which determines what appears in the tool tip for this series
                                            name = "Prophylaxis on Day", 
                                            marker = list(symbol = "square"),     
                                            hcaes(x=ID, y=Prophylaxis_Time), 
