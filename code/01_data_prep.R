@@ -9,12 +9,12 @@ library(survival)
 library(KMsurv)    #survival data set lives here
 library(highcharter)
 library(reactable)
-library(gplots)
+library(gplots)    #allows you to convert colors by name to hex
 
 #Load the burn data set
 data(burn)
 
-#Data mgmt - general - based on documentation - ??burn
+#Data mgmt - general - based on documentation - Use ??burn to learn about the data set
 burn_1m <-  burn %>%
   mutate(ID          = Obs,
          Treatment   = if_else(Z1 == 1, "Body Cleansing", "Routine Bath"),
@@ -34,10 +34,10 @@ burn_1m <-  burn %>%
   select(-c(Obs, T3, D3, starts_with("Z")))
 
 
-#Data mgmt w.r.t to swimmer plot
+#Data mgmt for the swimmer plot
 #Provision a place holder for the swimmer plot
-#For the secondary events (excision, prophylaxis), set the time equal to NA if the event never happened - just care whether they happened or not
-#For the primary events (infection, e.g. Time/Censor), create a color and name col for the swimmer plot
+#For the secondary events (excision, prophylaxis), set the time equal to NA if the event never happened
+#For the primary event (infection, e.g. Time/Censor), create a color and name col that's used in the swimmer plot
 burn_1m <- burn_1m %>%
   mutate(Excise_Time      = ifelse(Excise == 1, Excise_Time, NA),
          Prophylaxis_Time = ifelse(Prophylaxis == 1, Prophylaxis_Time, NA),
@@ -55,7 +55,7 @@ time_vector <- seq(0,100,20)
 #For each ID, construct a series of indicators that record whether they are:
 # at risk of the event for a given time
 # had an event at the given time
-#This can also be potentially expensive, so again I compute it here in advance and save the resulting data.
+#This can be potentially "expensive", so I compute it here in advance and save the resulting data
 for(i in seq_along(time_vector)) {
   if(i==1) {
     #By Definition everyone is at risk at the beginning and no events
@@ -67,7 +67,7 @@ for(i in seq_along(time_vector)) {
   }
 }
 
-#Create the numbers at risk and event summary tables. These ultimately get displayed in the app.
+#Create the numbers at risk and event summary tables. These ultimately get displayed in the app
 nar_summary_table <-  burn_1m %>%
   group_by(Treatment) %>%
   summarise(across(starts_with("risk_t"), sum)) %>%
@@ -80,7 +80,5 @@ eve_summary_table <-  burn_1m %>%
 
 #Save data needed for the actual shiny app
 rm(list=setdiff(ls(), c("sfit","burn_1m","eve_summary_table","nar_summary_table")))
-
-#Save
 save.image(here::here('data', 'pre_computed_data.Rdata'))
    

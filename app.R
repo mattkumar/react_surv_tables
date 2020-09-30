@@ -58,7 +58,7 @@ server <- function(input, output) {
   values <- reactiveValues()
   
   #Track the following: table data source, table title, plot title and plot options 
-  #These areelements that display/change on the UI based on user selection of analysis method. 
+  #These are elements that display/change on the UI based on user selection of analysis method. 
   observeEvent(input$option,{
     if (input$option == 1) {
       values$data        <- nar_summary_table
@@ -66,8 +66,8 @@ server <- function(input, output) {
       values$plot_type   <- NULL
       values$table_title <- "Number at Risk"
     } else if (input$option == 2) {
-      values$data       <- eve_summary_table  
-      values$plot_title <- "Cumulative Events Plot"
+      values$data        <- eve_summary_table  
+      values$plot_title  <- "Cumulative Events Plot"
       values$plot_type   <- "event"
       values$table_title <- "Number of Events"
     }
@@ -85,15 +85,15 @@ server <- function(input, output) {
   #Summary Table
   output$summary_tab <- renderDataTable(
     datatable(values$data,
-              #Make individual cells selectable, one at a time only. Initialize the selected cells.
-              selection = list(mode = 'single', target = 'cell', selected= matrix(c(1,2),ncol=2)),
+              #Make individual cells selectable, one at a time only and initialize the selected cells on load
+              selection = list(mode = 'single', target = 'cell', selected= matrix(c(1,3),ncol=2)),
               rownames  = FALSE,
-              #Remove col names to give the illusion the table is part of the figure
+              #Remove col names to give the illusion the table is part of the figure :)
               colnames  = rep("", ncol(values$data)),
               options   = list(dom = 't',
                                columnDefs = list(
                                  list(className = 'dt-center', targets = '_all'),
-                                 #hide the first column, which is treatment (its color coded below to match the plot)
+                                 #hide the first column, which is treatment (its color coded below, so it's redundant, but still needed for drilling down)
                                  list(visible=FALSE, targets=c(0))))) %>%
       
       #This chunk takes care of the color coding
@@ -103,23 +103,23 @@ server <- function(input, output) {
         color = styleEqual(c("Body Cleansing", "Routine Bath"), c("#5F4B8BFF" ,  "#E69A8DFF")))
   )
   
-  #Subset the original patient level data (e.g. burn_1m) to create the drill down data (e.g. drill_data()), 
-  #based on user cell selection in output$summary_tab
+  #Subset the original patient level data (e.g. burn_1m) to create the drill down data
+  #This is reactive, and based on user cell selection in the summary table (output$summary_tab)
   drill_data <- reactive({
     
     #Require selection by user before doing anything
     req(input$summary_tab_cells_selected)
     
-    #Retrieve the selected cell coordinates
+    #Retrieve the selected cell coordinates - these help determine how to drill down
     row_coord <- as.integer(input$summary_tab_cells_selected[1])
     col_coord <- as.integer(input$summary_tab_cells_selected[2])
     
-    #Note: it's helpful to print these to the console to get an idea of the coordinates / debugging
+    #Note: it's helpful to print these to the console to get an idea of the coordinate mapping and for debugging!
     #print(row_coord)
     #print(col_coord)
     
-    #Remove variables not used, based on what was selected. By default, all event_ and risk_ are in the burn_1m dataset.
-    #Keeping the ones we don't use in interfere with the position coordinates in the next chunk.
+    #Remove variables not used, based on what was selected. By default, all event_ and risk_ are in the burn_1m dataset
+    #Keeping the ones we don't use in interfere with the position coordinates in the next chunk
     #e.g. removing the unused ones lets us use the same selection logic on line 137
     if(input$option==1) {
       drill_filtered <- burn_1m %>%
@@ -158,13 +158,12 @@ server <- function(input, output) {
       #Select only a few variables for display in the drill down
       drill_data() %>% select(ID, Sex, Race, Type, Swimmer), 
       
-      #basic table features - self explanatory
+      #Basic table features - self explanatory
       defaultPageSize = 6,
       striped = TRUE,
       highlight = TRUE,
       searchable = TRUE,
      
-
       #Adjusting column widths
       columns = list(
         ID     = colDef(width=50),
@@ -172,28 +171,49 @@ server <- function(input, output) {
         Race   = colDef(width=65), 
         Type   = colDef(width=75),
         
-        #Swimmer Plot - this will access drill_data() and create the custom plot in Highcharter
+        #Swimmer Plot - custom embedded HTML widget using highcharter
+        #The swimmer plot uses drill_data() to compute the inline chart
         Swimmer = colDef(name = 'Swimmer Plot',
                          cell = function(value,index) {
+                           
+                           #Swimmer plot logic starts here
                            drill_data()[index,] %>%
                              hchart("bar",  hcaes(x = ID , y = Time), name = "Total Study Days") %>%
                              
                              #Primary Event Censoring
-                             hc_add_series(drill_data()[index,], "point",  marker = list(symbol = "triangle"), hcaes(x=ID, y=Time, color = Censor_col, group = Name_col)) %>%
+                             hc_add_series(drill_data()[index,], 
+                                           "point",  
+                                           marker = list(symbol = "triangle"), 
+                                           hcaes(x=ID, y=Time, color = Censor_col, group = Name_col)) %>%
+                             
                              #Secondary Event - Excision and its options
-                             hc_add_series(drill_data()[index,], name = "Excision on Day",    "point",  marker = list(symbol = "circle"),   hcaes(x=ID, y=Excise_Time),   color = "green") %>%
+                             hc_add_series(drill_data()[index,], 
+                                           "point",
+                                           #name is the value of the tool tip for this series
+                                           name = "Excision on Day",  
+                                           marker = list(symbol = "circle"),
+                                           hcaes(x=ID, y=Excise_Time),   
+                                           color = "green") %>%
+                             
                              #Secondary Event - Prophlaxis and its options
-                             hc_add_series(drill_data()[index,], name = "Prophylaxis on Day", "point",  marker = list(symbol = "square"),     hcaes(x=ID, y=Prophylaxis_Time), color = "purple") %>%
+                             hc_add_series(drill_data()[index,], 
+                                           "point",
+                                           #name will value of the tool tip for this series
+                                           name = "Prophylaxis on Day", 
+                                           marker = list(symbol = "square"),     
+                                           hcaes(x=ID, y=Prophylaxis_Time), 
+                                           color = "purple") %>%
                              
                              #Axis
-                             #Keep yAxis labels in for now - you could remove them since the plot is interactable but It makes it easier to compare across subjects
+                             #Keep yAxis labels in for now - you could remove them since the plot is interactable but it helps in comparisons across patients
                              hc_yAxis(title = list(text = " "), min=0, max=100, labels = list(enabled=TRUE)) %>%
                              hc_xAxis(title = list(text = " "), labels = list(enabled=FALSE)) %>%
                              
                              #Misc plot options
-                             hc_legend(enabled=FALSE) %>%
+                             hc_legend(enabled = FALSE) %>%
                              hc_size(width = 500, height = 70) %>%
-                             #Custom tool tip formatting - basic JS
+                             
+                             #Custom tool tip formatting - basic JS string
                              hc_tooltip(formatter = JS("function(){return (this.series.name + `:  ` + this.y)}"))
                              
                            
