@@ -12,9 +12,8 @@ library(reactable)
 library(DT)
 library(highcharter)
 
-#load in pre-computed data
-#the script that produced this data is in /code/01_data_prep.R
-load(here::here('data', 'pre_computed_data.Rdata'))
+#asset loader for the app (e.g.data, tables, survival objects)
+source("assets.R")
 
 #define ui
 ui  <- fluidPage( 
@@ -25,7 +24,7 @@ ui  <- fluidPage(
                  wellPanel(
                    p("A survival analysis of time to staphylococcus infection (days) by treatment group (routine bathing vs body cleansing) among burn patients is used to demonstrate interactive survival tables."),
                    br(),
-                   selectInput('option','Select Analysis Method:', choices=c('Kaplan Meier'=1,'Cumulative Events'=2)),
+                   selectInput('option','Select Analysis Method:', choices=c('Kaplan Meier' = 1,'Cumulative Events' = 2)),
                    br(),
                    p("If Kaplan Meier is chosen as the method, the Number at Risk table is displayed. If Cumulative Events is chosen, the Number of Events table is displayed."),
                    br(),
@@ -86,7 +85,7 @@ server <- function(input, output) {
   output$summary_tab <- renderDataTable(
     datatable(values$data,
               #Make individual cells selectable, one at a time only and initialize the selected cells on load
-              selection = list(mode = 'single', target = 'cell', selected= matrix(c(1,3),ncol=2)),
+              selection = list(mode = 'single', target = 'cell', selected= matrix(c(2,2),ncol=2)),
               rownames  = FALSE,
               #Remove col names to give the illusion the table is part of the figure :)
               colnames  = rep("", ncol(values$data)),

@@ -50,7 +50,7 @@ burn_1m <- burn_1m %>%
 
 #For the main survival analysis, (time to infection, e.g. Time/Censor), perform survival calculations
 sfit <- survfit(Surv(Time, Censor) ~ Treatment, data = burn_1m)
-time_vector <- seq(0,100,20)
+time_vector <- seq(0,100,25)
 
 #For each ID, construct a series of indicators that record whether they are:
 # at risk of the event for a given time
