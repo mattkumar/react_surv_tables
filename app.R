@@ -179,12 +179,12 @@ server <- function(input, output) {
                         #add in the percentage formatter
                         format = colFormat(percent = TRUE, digits = 0),
                         
-                        #adapted from documentation, orange_pal() is in assets.R
+                        #adapted from documentation, my_pal() is in assets.R
                         style = function(value) {
                           #normalized based on present values (though this is a percent already)
                           normalized <- (value - min(burn_1m$TSA)) / (max(burn_1m$TSA) - min(burn_1m$TSA))
                           #adapted from documentation, my_pal() is in assets.R
-                          color <- orange_pal(normalized)
+                          color <- my_pal(normalized)
                           list(background = color)
                         }),
         

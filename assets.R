@@ -3,4 +3,4 @@
 load(here::here('data', 'pre_computed_data.Rdata'))
 
 #palette for styling Surface Area percent
-orange_pal <- function(x) rgb(colorRamp(c("#ffe4cd", "#ffb54e"))(x), maxColorValue = 255)
+my_pal <- function(x) rgb(colorRamp(c("white", "red"))(x), maxColorValue = 255)
