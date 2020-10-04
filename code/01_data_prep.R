@@ -25,6 +25,7 @@ burn_1m <-  burn %>%
                                  Z11 == 3 ~ "Electric",
                                  Z11 == 4 ~ "Flame"),
          Head        = if_else(Z5 == 1, "Yes", "No"),
+         TSA         = Z4/100,
          Censor      = D3,
          Time        = T3,
          Excise      = D1,

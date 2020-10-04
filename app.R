@@ -133,7 +133,7 @@ server <- function(input, output) {
       
       #Here we specify what variables we want to see in the drill down
       #The last variable is always the indicator variable (e.g. event or risk), and is based on the col_coord of the user selected cell
-      select(c(1:13, col_coord+13)) %>%
+      select(c(1:14, col_coord+14)) %>%
       
       #Filter the last variable (i.e. the indicator) to be equal to 1
       filter(eval(parse(text=colnames(.)[ncol(.)])) == 1) 
@@ -151,11 +151,14 @@ server <- function(input, output) {
     }
   })
   
+  
+   
   #Show the drilled down data
   output$drill_tab <- renderReactable(
+ 
     reactable(
       #Select only a few variables for display in the drill down
-      drill_data() %>% select(ID, Sex, Race, Type, Swimmer), 
+      drill_data() %>% select(ID, Sex, Type, TSA, Swimmer), 
       
       #Basic table features - self explanatory
       defaultPageSize = 6,
@@ -165,14 +168,30 @@ server <- function(input, output) {
      
       #Adjusting column widths
       columns = list(
-        ID     = colDef(width=50),
-        Sex    = colDef(width=65),
-        Race   = colDef(width=65), 
-        Type   = colDef(width=75),
+        ID     = colDef(width=50,align = "center"),
+        Sex    = colDef(width=65,align = "center"),
+        Type   = colDef(width=75,align = "center"),
+        
+        #Percentage of total surface area burned - visualize like a heat map
+        TSA    = colDef(name = "Burn Surface Area",
+                        width=75,
+                        align = "center",
+                        #add in the percentage formatter
+                        format = colFormat(percent = TRUE, digits = 0),
+                        
+                        #adapted from documentation, orange_pal() is in assets.R
+                        style = function(value) {
+                          #normalized based on present values (though this is a percent already)
+                          normalized <- (value - min(burn_1m$TSA)) / (max(burn_1m$TSA) - min(burn_1m$TSA))
+                          #adapted from documentation, my_pal() is in assets.R
+                          color <- orange_pal(normalized)
+                          list(background = color)
+                        }),
         
         #Swimmer Plot - custom embedded HTML widget using highcharter
         #The swimmer plot uses drill_data() to compute the inline chart
-        Swimmer = colDef(name = 'Swimmer Plot',
+        Swimmer = colDef(name = "Swimmer Plot",
+                         align = "center",
                          cell = function(value,index) {
                            
                            #Swimmer plot logic starts here
@@ -208,12 +227,12 @@ server <- function(input, output) {
                              
                              #Axis
                              #Keep yAxis labels in for now - you could remove them since the plot is interactable but it helps in comparisons across patients
-                             hc_yAxis(title = list(text = " "), min=0, max=100, labels = list(enabled=TRUE)) %>%
+                             hc_yAxis(title = list(text = " "), min=0, max=100, tickInterval=20, labels = list(enabled=TRUE)) %>%
                              hc_xAxis(title = list(text = " "), labels = list(enabled=FALSE)) %>%
                              
                              #Misc plot options
                              hc_legend(enabled = FALSE) %>%
-                             hc_size(width = 500, height = 70) %>%
+                             hc_size(width = 400, height = 60) %>%
                              
                              #Custom tool tip formatting - basic JS string
                              hc_tooltip(formatter = JS("function(){return (this.series.name + `:  ` + this.y)}"))
