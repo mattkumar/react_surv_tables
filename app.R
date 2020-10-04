@@ -22,7 +22,7 @@ ui  <- fluidPage(
         fluidRow(
           column(2,
                  wellPanel(
-                   p("A survival analysis of time to staphylococcus infection (days) by treatment group (routine bathing vs body cleansing) among burn patients is used to demonstrate interactive survival tables."),
+                   p("A survival analysis of time to death (days) by Cancer Type among transplant patients is used to demonstrate interactive survival tables."),
                    br(),
                    selectInput('option','Select Analysis Method:', choices=c('Kaplan Meier' = 1,'Cumulative Events' = 2)),
                    br(),
@@ -76,7 +76,7 @@ server <- function(input, output) {
   output$plot_title <- renderText(values$plot_title)
   
   #Plot - courtesy of survminer!
-  output$km <- renderPlot(ggsurvplot(sfit, conf.int = TRUE, palette=c("#5F4B8BFF" ,  "#E69A8DFF"), fun = values$plot_type)) 
+  output$km <- renderPlot(ggsurvplot(sfit, conf.int = TRUE, palette=c("#5F4B8BFF" , "#E69A8DFF", "skyblue"), fun = values$plot_type)) 
 
   #Summary Table Title
   output$header <- renderText(values$table_title)
@@ -92,17 +92,17 @@ server <- function(input, output) {
               options   = list(dom = 't',
                                columnDefs = list(
                                  list(className = 'dt-center', targets = '_all'),
-                                 #hide the first column, which is treatment (its color coded below, so it's redundant, but still needed for drilling down)
+                                 #hide the first column, which is Group (its color coded below, so it's redundant, but still needed for drilling down)
                                  list(visible=FALSE, targets=c(0))))) %>%
       
       #This chunk takes care of the color coding
       formatStyle(
-        'Treatment',
+        'Group',
         target = 'row',
-        color = styleEqual(c("Body Cleansing", "Routine Bath"), c("#5F4B8BFF" ,  "#E69A8DFF")))
+        color = styleEqual(c("ALL", "AML (High Risk)", "AML (Low Risk)"), c("#5F4B8BFF" ,  "#E69A8DFF", "skyblue")))
   )
   
-  #Subset the original patient level data (e.g. burn_1m) to create the drill down data
+  #Subset the original patient level data (e.g. bmt_1m) to create the drill down data
   #This is reactive, and based on user cell selection in the summary table (output$summary_tab)
   drill_data <- reactive({
     
@@ -117,14 +117,14 @@ server <- function(input, output) {
     #print(row_coord)
     #print(col_coord)
     
-    #Remove variables not used, based on what was selected. By default, all event_ and risk_ are in the burn_1m dataset
+    #Remove variables not used, based on what was selected. By default, all event_ and risk_ are in the bmt_1m dataset
     #Keeping the ones we don't use in interfere with the position coordinates in the next chunk
     #e.g. removing the unused ones lets us use the same selection logic on line 137, regardless of risk or event selection
     if(input$option==1) {
-      drill_filtered <- burn_1m %>%
+      drill_filtered <- bmt_1m %>%
         select(-starts_with("event_"))
     } else {
-      drill_filtered <- burn_1m %>%
+      drill_filtered <- bmt_1m %>%
         select(-starts_with("risk_"))
     }
     
@@ -141,16 +141,20 @@ server <- function(input, output) {
     #Final filtering on rows
     if(row_coord == 1) {
       drill_filtered <- drill_filtered %>% 
-        filter(Treatment == "Body Cleansing") %>%
-        select(-c(Treatment, starts_with("event"), starts_with("risk")))
-    } else {
-      drill_filtered <- drill_filtered %>% 
-        filter(Treatment == "Routine Bath")%>%
-        select(-c(Treatment, starts_with("event"), starts_with("risk")))
+        filter(Group == "ALL") %>%
+        select(-c(Group, starts_with("event"), starts_with("risk")))
       
+    } else if(row_coord == 2) {
+      drill_filtered <- drill_filtered %>% 
+        filter(Group == "AML (High Risk)")%>%
+        select(-c(Group, starts_with("event"), starts_with("risk")))
+      
+    } else if(row_coord == 3) {
+      drill_filtered <- drill_filtered %>% 
+        filter(Group == "AML (Low Risk)")%>%
+        select(-c(Group, starts_with("event"), starts_with("risk")))
     }
-  })
-  
+    })
   
    
   #Show the drilled down data
@@ -158,7 +162,7 @@ server <- function(input, output) {
  
     reactable(
       #Select only a few variables for display in the drill down
-      drill_data() %>% select(ID, Sex, Type, TSA, Swimmer), 
+      drill_data() %>% select(ID, Sex, Age, Transplant_Time, Swimmer), 
       
       #Basic table features - self explanatory
       defaultPageSize = 6,
@@ -169,24 +173,24 @@ server <- function(input, output) {
       #Adjusting column widths
       columns = list(
         ID     = colDef(width=50,align = "center"),
+        Age    = colDef(width=50,align = "center"),
         Sex    = colDef(width=65,align = "center"),
-        Type   = colDef(width=75,align = "center"),
         
-        #Percentage of total surface area burned - visualize like a heat map
-        TSA    = colDef(name = "Burn Surface Area",
-                        width=75,
-                        align = "center",
-                        #add in the percentage formatter
-                        format = colFormat(percent = TRUE, digits = 0),
-                        
-                        #adapted from documentation, orange_pal() is in assets.R
-                        style = function(value) {
-                          #normalized based on present values (though this is a percent already)
-                          normalized <- (value - min(burn_1m$TSA)) / (max(burn_1m$TSA) - min(burn_1m$TSA))
-                          #adapted from documentation, my_pal() is in assets.R
-                          color <- orange_pal(normalized)
-                          list(background = color)
-                        }),
+        #Total Wait Time to Transplant - visualize like a heat map
+        Transplant_Time    = colDef(name = "Wait Time",
+                                    width=75,
+                                    align = "center",
+                                    
+                                    #adapted from documentation, orange_pal() is in assets.R
+                                    style = function(value) {
+                                      
+                                      #normalized based on present values
+                                      normalized <- (value - min(bmt_1m$Transplant_Time)) / (max(bmt_1m$Transplant_Time) - min(bmt_1m$Transplant_Time))
+                                      
+                                      #adapted from documentation, my_pal() is in assets.R
+                                      color <- orange_pal(normalized)
+                                      list(background = color)
+                                    }),
         
         #Swimmer Plot - custom embedded HTML widget using highcharter
         #The swimmer plot uses drill_data() to compute the inline chart
@@ -201,38 +205,56 @@ server <- function(input, output) {
                                     #name is the argument which determines what appears in the tool tip for this series
                                     name = "Total Study Days") %>%
                              
-                             #Primary Event Censoring
+                             #Primary Event Censoring - Death
                              hc_add_series(drill_data()[index,], 
                                            "point",  
                                            marker = list(symbol = "triangle"), 
                                            hcaes(x=ID, y=Time, color = Censor_col, group = Name_col)) %>%
-                             
-                             #Secondary Event - Excision and its options
+      
+                             #Secondary Event - Platelet Recovery
                              hc_add_series(drill_data()[index,], 
                                            "point",
                                            #name is the argument which determines what appears in the tool tip for this series
-                                           name = "Excision on Day",  
+                                           name = "Platelet Recovery on Day",  
                                            marker = list(symbol = "circle"),
-                                           hcaes(x=ID, y=Excise_Time),   
+                                           hcaes(x=ID, y=Plate_Time),   
                                            color = "green") %>%
                              
-                             #Secondary Event - Prophlaxis and its options
+                             #Secondary Event - Relapse Disease
                              hc_add_series(drill_data()[index,], 
                                            "point",
                                            #name is the argument which determines what appears in the tool tip for this series
-                                           name = "Prophylaxis on Day", 
+                                           name = "Disease Relapse on Day", 
                                            marker = list(symbol = "square"),     
-                                           hcaes(x=ID, y=Prophylaxis_Time), 
+                                           hcaes(x=ID, y=Relapse_Time), 
                                            color = "purple") %>%
+                               
+                             #Secondary Event - GVHD
+                             hc_add_series(drill_data()[index,], 
+                                           "point",
+                                           #name is the argument which determines what appears in the tool tip for this series
+                                           name = "GVHD on Day",  
+                                           marker = list(symbol = "diamond"),
+                                           hcaes(x=ID, y=GVHD_Time),   
+                                           color = "yellow") %>%
+                               
+                             #Secondary Event - Chronic GVHD
+                             hc_add_series(drill_data()[index,], 
+                                           "point",
+                                            #name is the argument which determines what appears in the tool tip for this series
+                                            name = "Chronic GVHD on Day", 
+                                            marker = list(symbol = "triangle-down"),     
+                                            hcaes(x=ID, y=GVHDC_Time), 
+                                            color = "darkblue") %>%      
                              
                              #Axis
                              #Keep yAxis labels in for now - you could remove them since the plot is interactable but it helps in comparisons across patients
-                             hc_yAxis(title = list(text = " "), min=0, max=100, tickInterval=20, labels = list(enabled=TRUE)) %>%
-                             hc_xAxis(title = list(text = " "), labels = list(enabled=FALSE)) %>%
+                             hc_yAxis(title = list(text = " "),  min = 0, max = 2500, tickInterval = 500, labels = list(enabled=TRUE)) %>%
+                             hc_xAxis(title = list(text = " "),  labels = list(enabled=FALSE)) %>%
                              
                              #Misc plot options
                              hc_legend(enabled = FALSE) %>%
-                             hc_size(width = 400, height = 60) %>%
+                             hc_size(width = 500, height = 60) %>%
                              
                              #Custom tool tip formatting - basic JS string
                              hc_tooltip(formatter = JS("function(){return (this.series.name + `:  ` + this.y)}"))
