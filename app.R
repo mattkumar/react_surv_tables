@@ -245,7 +245,7 @@ server <- function(input, output) {
                                             name = "Chronic GVHD on Day", 
                                             marker = list(symbol = "triangle-down"),     
                                             hcaes(x=ID, y=GVHDC_Time), 
-                                            color = "darkblue") %>%      
+                                            color = "gray") %>%      
                              
                              #Axis
                              #Keep yAxis labels in for now - you could remove them since the plot is interactable but it helps in comparisons across patients
