@@ -12,7 +12,7 @@ library(reactable)
 library(DT)
 library(highcharter)
 
-#asset loader for the app (e.g.data, tables, survival objects)
+#asset loader for the app (e.g.data, tables, survival object)
 source("assets.R")
 
 #define ui
